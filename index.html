@@ -172,7 +172,13 @@ tr:hover td{background:#f8fafc}
     <div class="stat"><div class="num" id="insRem">0</div><div class="lbl">المتبقّي</div></div>
   </div>
   <div class="card">
-    <h2>➕ إضافة زبون أقساط جديد</h2>
+    <h2>👤 اختر الزبون</h2>
+    <select id="insPick" onchange="renderPick()"></select>
+    <div id="insPickBody" style="margin-top:12px"></div>
+  </div>
+  <details class="card">
+    <summary style="cursor:pointer;font-weight:700;color:var(--pd)">➕ تسجيل زبون بدين قديم (بدون عملية بيع)</summary>
+    <h2 style="display:none">➕ إضافة زبون أقساط جديد</h2>
     <div class="grid g3">
       <div><label>الاسم الكامل</label><input id="ciName" placeholder="اسم الزبون"></div>
       <div><label>رقم واتساب (للتذكير الشهري)</label><input id="ciPhone" inputmode="tel" placeholder="مثال: 0550123456" dir="ltr"></div>
@@ -184,7 +190,7 @@ tr:hover td{background:#f8fafc}
       <div><label>ملاحظات</label><input id="ciNote" placeholder="اختياري"></div>
     </div>
     <button class="btn btn-ok" onclick="addCustomer()">💾 تسجيل الزبون</button>
-  </div>
+  </details>
   <div class="card">
     <h2>📋 سجل الأقساط</h2>
     <div style="overflow-x:auto"><table id="insTable"></table></div>
@@ -209,7 +215,12 @@ tr:hover td{background:#f8fafc}
 <div class="modal" id="instModal"><div class="mbox">
   <h2 style="color:var(--pd);margin-bottom:12px">📋 بيع بالتقسيط</h2>
   <label>الزبون</label>
-  <select id="instCust"></select>
+  <div class="grid g2" style="margin-bottom:8px">
+    <button type="button" class="btn btn-p" id="cmOld" onclick="setCustMode('old')">👤 زبون مسجّل</button>
+    <button type="button" class="btn btn-g" id="cmNew" onclick="setCustMode('new')">➕ زبون جديد</button>
+  </div>
+  <div id="custOldBox"><select id="instCust"></select></div>
+  <div id="custNewBox" style="display:none"><input id="instNewName" placeholder="اسم الزبون الجديد"></div>
   <label>دفعة أولى (تُخصم من الدين)</label>
   <input id="instDown" type="number" min="0" value="0">
   <label>عدد الأقساط الشهرية</label>
@@ -433,9 +444,11 @@ function checkout(mode){
   const total=cart.reduce((s,c)=>s+c.price*c.qty,0);
   if(mode==='install'){
     const sel=document.getElementById('instCust');
-    sel.innerHTML=customers.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')||'<option value="">— لا يوجد زبائن، سجّله أولاً من صفحة الأقساط —</option>';
-    document.getElementById('instPhone').value=customers[0]?customers[0].phone:'';
-    sel.onchange=()=>{ const c=customers.find(x=>x.id==sel.value); document.getElementById('instPhone').value=c?c.phone:''; calcInst(); };
+    sel.innerHTML=customers.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+    sel.onchange=()=>{ const c=customers.find(x=>x.id==sel.value); document.getElementById('instPhone').value=c?c.phone:''; };
+    document.getElementById('instNewName').value='';
+    document.getElementById('instDown').value=0;
+    setCustMode(customers.length?'old':'new');
     calcInst(); openM('instModal');
     return;
   }
@@ -455,23 +468,50 @@ function calcInst(){
   document.getElementById('instMonthly').textContent=Math.max(0,Math.ceil((total-down)/n)).toLocaleString('ar-DZ');
 }
 ['instDown','instN'].forEach(id=>document.addEventListener('input',e=>{ if(e.target.id===id) calcInst(); }));
+let custMode='old';
+function setCustMode(m){
+  custMode=m;
+  document.getElementById('custOldBox').style.display=m==='old'?'block':'none';
+  document.getElementById('custNewBox').style.display=m==='new'?'block':'none';
+  document.getElementById('cmOld').className='btn '+(m==='old'?'btn-p':'btn-g');
+  document.getElementById('cmNew').className='btn '+(m==='new'?'btn-p':'btn-g');
+  const ph=document.getElementById('instPhone');
+  if(m==='old'){ const c=customers.find(x=>x.id==document.getElementById('instCust').value); ph.value=c?c.phone:''; }
+  else ph.value='';
+  calcInst();
+}
 function confirmInstall(){
-  const cid=+document.getElementById('instCust').value;
-  const c=customers.find(x=>x.id===cid);
-  if(!c) return toast('❌ سجّل الزبون أولاً من صفحة الأقساط');
   const total=cart.reduce((s,x)=>s+x.price*x.qty,0);
   const down=+document.getElementById('instDown').value||0;
-  const n=+document.getElementById('instN').value||1;
-  const phone=document.getElementById('instPhone').value.trim()||c.phone;
+  const n=Math.max(1,+document.getElementById('instN').value||1);
+  const phoneIn=document.getElementById('instPhone').value.trim();
+  if(down<0||down>total) return toast('❌ الدفعة الأولى غير صحيحة');
+  let c, isNew=false;
+  if(custMode==='new'){
+    const name=document.getElementById('instNewName').value.trim();
+    if(!name) return toast('❌ أدخل اسم الزبون');
+    if(!phoneIn) return toast('❌ رقم واتساب مطلوب للتذكير');
+    const digits=phoneIn.replace(/\D/g,'');
+    // إن كان الاسم أو الرقم موجوداً مسبقاً نستخدم نفس الزبون (لا تكرار)
+    c=customers.find(x=>x.name.trim()===name || (digits && x.phone.replace(/\D/g,'')===digits));
+    if(!c){ c={id:Date.now(), name, phone:phoneIn, note:'', debt:0, schedule:[]}; isNew=true; }
+  } else {
+    c=customers.find(x=>x.id==document.getElementById('instCust').value);
+    if(!c) return toast('❌ اختر زبوناً أو اضغط «زبون جديد»');
+  }
+  const phone=phoneIn||c.phone;
   const debt=total-down;
   for(const x of cart){ const p=products.find(y=>y.id===x.pid); p.types[x.ti].qty-=x.qty; }
-  c.debt+=debt;
-  const today=new Date();
-  c.schedule.push({id:Date.now(), date:today.toISOString().slice(0,10), amount:Math.ceil(debt/n), total:debt, paid:0, remindDate:addMonths(today,n>0?1:0).toISOString().slice(0,10), phone});
+  if(isNew) customers.push(c);
+  if(debt>0){
+    c.debt+=debt;
+    const today=new Date();
+    c.schedule.push({id:Date.now(), date:today.toISOString().slice(0,10), amount:Math.ceil(debt/n), total:debt, paid:0, remindDate:addMonths(today,1).toISOString().slice(0,10), phone});
+  }
   sales.push({id:Date.now()+1, date:new Date().toISOString(), items:cart.map(x=>({...x})), total, pay:'تقسيط', cust:c.name, down});
   printReceipt({title:'فاتورة بيع بالتقسيط', cust:c.name, lines:[...cart.map(x=>`${x.name} (${x.type}) × ${x.qty} = ${fmt(x.price*x.qty)}`),'—','دفعة أولى: '+fmt(down),'المتبقي ديناً: '+fmt(debt),`القسط الشهري: ${fmt(Math.ceil(debt/n))} × ${n}`], total});
   cart=[]; renderCart(); renderSaleGrid(); saveAll(); closeM('instModal');
-  toast('✅ تم البيع بالتقسيط — سيتم إرسال تذكير واتساب شهرياً');
+  toast(isNew?'✅ تم تسجيل الزبون الجديد والبيع بالتقسيط':'✅ تم البيع بالتقسيط على حساب '+c.name);
 }
 function addMonths(d,m){ const x=new Date(d); x.setMonth(x.getMonth()+m); return x; }
 
@@ -508,7 +548,28 @@ function addCustomer(){
   ['ciName','ciPhone','ciTotal','ciCount','ciNote'].forEach(id=>document.getElementById(id).value='');
   saveAll(); renderInstall(); toast('✅ تم تسجيل الزبون — تذكير واتساب شهري مفعّل');
 }
+function fillPick(){
+  const sel=document.getElementById('insPick'), keep=sel.value;
+  sel.innerHTML=customers.map(c=>`<option value="${c.id}">${esc(c.name)} — ${esc(c.phone)}</option>`).join('')||'<option value="">— لا يوجد زبائن بعد —</option>';
+  if(keep && customers.some(c=>c.id==keep)) sel.value=keep;
+  renderPick();
+}
+function renderPick(){
+  const c=customers.find(x=>x.id==document.getElementById('insPick').value);
+  const box=document.getElementById('insPickBody');
+  if(!c){ box.innerHTML='<div class="empty">سجّل زبوناً عبر «بيع بالتقسيط» من صفحة البيع</div>'; return; }
+  const paid=c.schedule.reduce((s,x)=>s+x.paid,0), rem=Math.max(0,c.debt-paid);
+  box.innerHTML=`<div class="grid g3" style="margin-bottom:12px">
+    <div class="stat"><div class="num">${fmt(c.debt)}</div><div class="lbl">إجمالي الدين</div></div>
+    <div class="stat"><div class="num" style="color:var(--ok)">${fmt(paid)}</div><div class="lbl">المسدَّد</div></div>
+    <div class="stat"><div class="num" style="color:var(--bad)">${fmt(rem)}</div><div class="lbl">المتبقّي</div></div></div>
+    <button class="btn btn-ok" onclick="openPay(${c.id})">💵 تنزيل قسط</button>
+    <button class="btn btn-p" onclick="sendReminder(${c.id})">📱 تذكير واتساب</button>
+    <button class="btn btn-g" onclick="gotoCust(${c.id})">📄 كشف الحساب</button>`;
+}
+function gotoCust(id){ document.querySelector('#mainNav [data-page=cust]').click(); openCust(id); }
 function renderInstall(){
+  fillPick();
   let tot=0, paid=0;
   let rows='<tr><th>الزبون</th><th>واتساب</th><th>إجمالي الدين</th><th>المسدَّد</th><th>المتبقّي</th><th>حالة التذكير</th><th>إجراءات</th></tr>';
   customers.forEach(c=>{
