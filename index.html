@@ -207,7 +207,7 @@ tr:hover td{background:#f8fafc}
 <!-- ============ العرض المباشر ============ -->
 <div class="page" id="display">
   <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-    <h2 style="border:none;padding:0;margin:0">🖥️️ عرض مباشر — منتجات المتوفرة داخل المحل</h2>
+    <h2 style="border:none;padding:0;margin:0">🖥 عرض مباشر — منتجات المتوفرة داخل المحل</h2>
     <span class="pill pill-info" id="dispClock"></span>
   </div>
   <div class="prod-grid" id="displayGrid"></div>
@@ -297,7 +297,7 @@ let customers = [];
 let cart = [];
 let unlocked = false;
 let editingId = null, payCustId = null;
-let appPin = "1234";
+let appPin = "1234"; // القيمة الافتراضية للرمز
 
 const fmt = n => (Number(n)||0).toLocaleString('ar-IQ') + ' د.ع';
 const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -332,9 +332,15 @@ async function loadData() {
     products = data.products || [];
     sales = data.sales || [];
     customers = data.customers || [];
-    if(data.pin) appPin = data.pin;
+    // إصلاح مشكلة الرمز: إجبار النظام على قراءته كنص، أو العودة لـ 1234
+    if(data.pin !== undefined && data.pin !== null && String(data.pin).trim() !== "") {
+       appPin = String(data.pin);
+    } else {
+       appPin = "1234";
+    }
     setSyncState('ok');
   } catch(e) {
+    appPin = "1234"; // في حال فشل الاتصال يبقى 1234
     setSyncState('err');
   }
   renderSaleGrid();
@@ -349,7 +355,7 @@ async function saveAll() {
     await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ products, sales, customers, pin: appPin })
+      body: JSON.stringify({ products, sales, customers, pin: String(appPin) })
     });
     setSyncState('ok');
   } catch(e) {
@@ -385,7 +391,8 @@ document.querySelectorAll('#mainNav button').forEach(b=>{
 });
 
 /* ================= الرمز السري ================= */
-function getPin(){ return appPin; }
+// إرجاع الرمز كنص لضمان المطابقة الصحيحة
+function getPin(){ return String(appPin); }
 function showLock(){
   document.querySelector('.lock-hero').style.display='block';
   document.getElementById('adminPanel').style.display='none';
@@ -395,7 +402,7 @@ function showLock(){
 }
 function tryUnlock(){
   const pin=[...document.querySelectorAll('#pinBox input')].map(i=>i.value).join('');
-  if(pin===getPin()){ unlocked=true; showAdmin(); toast('✅ تم فتح الإدارة'); }
+  if(pin === getPin()){ unlocked=true; showAdmin(); toast('✅ تم فتح الإدارة'); }
   else{ document.getElementById('lockMsg').textContent='❌ رمز خاطئ، حاول مجدداً';
     document.querySelectorAll('#pinBox input').forEach(i=>i.value=''); document.querySelector('#pinBox input').focus(); }
 }
@@ -405,9 +412,9 @@ document.querySelectorAll('#pinBox input').forEach((inp,i,arr)=>{
 });
 async function changePin(){
   const o=document.getElementById('oldPin').value, n=document.getElementById('newPin').value;
-  if(o!==getPin()) return toast('❌ الرمز القديم خاطئ');
+  if(o !== getPin()) return toast('❌ الرمز القديم خاطئ');
   if(!/^\d{4}$/.test(n)) return toast('❌ الرمز الجديد يجب أن يكون 4 أرقام');
-  appPin = n; 
+  appPin = String(n); 
   document.getElementById('oldPin').value=''; document.getElementById('newPin').value='';
   await saveAll();
   toast('✅ تم تغيير الرمز');
@@ -473,7 +480,6 @@ function saveProduct(){
   document.getElementById('typeRows').innerHTML=''; addTypeRow();
   renderAdminTable(); renderStats();
   
-  // يتم استدعاء الحفظ السحابي هنا دون عرقلة المستخدم
   saveAll(); 
 }
 function editProduct(id){
@@ -505,7 +511,7 @@ function renderAdminTable(){
       <td style="font-weight:700">${esc(p.name)}</td>
       <td>${p.types.map(t=>`${esc(t.type)}: <b>${t.qty}</b> ×${fmt(t.price)}`).join('<br>')}</td>
       <td><span class="pill ${total>0?'pill-ok':'pill-bad'}">${total}</span></td>
-      <td><button class="btn btn-p btn-sm" onclick="editProduct(${p.id})">✏️</button>
+      <td><button class="btn btn-p btn-sm" onclick="editProduct(${p.id})">✏️️</button>
       <button class="btn btn-bad btn-sm" onclick="delProduct(${p.id})">🗑️</button></td></tr>`;
   });
   document.getElementById('adminTable').innerHTML=rows;
