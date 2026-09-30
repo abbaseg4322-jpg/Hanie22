@@ -68,6 +68,28 @@ tr:hover td{background:#f8fafc}
 .search-row{display:flex;gap:10px;flex-wrap:wrap}
 .search-row input{flex:1;min-width:180px}
 .empty{text-align:center;color:#9ca3af;padding:30px;font-size:15px}
+
+/* إضافة ستايل شارة المزامنة بالخلفية */
+.sync-status {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  background: #fff;
+  border-radius: 30px;
+  padding: 8px 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  font-size: 13.5px;
+  font-weight: bold;
+  color: #374151;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  z-index: 1000;
+  border: 1px solid #e5e7eb;
+  animation: fade 0.3s;
+}
+.spin { animation: spin 1s linear infinite; display: inline-block; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -75,6 +97,7 @@ tr:hover td{background:#f8fafc}
   <h1>👕 هاني للملبوسات — نظام الكاشير</h1>
   <nav id="mainNav">
     <button data-page="sales" class="active">🛒 البيع</button>
+    <button data-page="reports">📊 التقارير والمبيعات</button>
     <button data-page="display">🖥️ العرض المباشر</button>
     <button data-page="install">📋 الأقساط</button>
     <button data-page="cust">👥 زبائن الأقساط</button>
@@ -147,7 +170,7 @@ tr:hover td{background:#f8fafc}
       <h2>🧾 الفاتورة الحالية</h2>
       <div id="cartList" style="max-height:300px;overflow:auto"></div>
       <div style="display:flex;justify-content:space-between;font-size:18px;font-weight:800;padding:12px 0;border-top:2px solid var(--p)">
-        <span>الإجمالي:</span><span id="cartTotal" style="color:var(--ok)">0 د.ج</span>
+        <span>الإجمالي:</span><span id="cartTotal" style="color:var(--ok)">0 د.ع</span>
       </div>
       <button class="btn btn-ok" style="width:100%;margin-bottom:8px" onclick="checkout('cash')">✅ دفع نقداً</button>
       <button class="btn btn-warn" style="width:100%" onclick="checkout('install')">📋 بيع بالتقسيط</button>
@@ -155,10 +178,36 @@ tr:hover td{background:#f8fafc}
   </div>
 </div>
 
+<!-- ============ التقارير والمبيعات ============ -->
+<div class="page" id="reports">
+  <div class="card">
+    <h2>📊 تقرير المبيعات والحركات</h2>
+    <div class="grid g2" style="margin-bottom: 15px;">
+      <div>
+        <label>اختر الشهر لتقرير المبيعات</label>
+        <input type="month" id="reportMonth" onchange="renderReports()">
+      </div>
+      <div style="display:flex; align-items:flex-end;">
+        <button class="btn btn-p" style="width:100%" onclick="printReport()">🖨️ طباعة تقرير الشهر</button>
+      </div>
+    </div>
+    
+    <div class="grid g3" style="margin-bottom:18px">
+      <div class="stat"><div class="num" id="repCount">0</div><div class="lbl">عدد العمليات/الفواتير</div></div>
+      <div class="stat"><div class="num" id="repItems">0</div><div class="lbl">القطع المباعة</div></div>
+      <div class="stat"><div class="num" id="repTotal">0</div><div class="lbl">إجمالي الدخل</div></div>
+    </div>
+    
+    <div style="overflow-x:auto">
+      <table id="repTable"></table>
+    </div>
+  </div>
+</div>
+
 <!-- ============ العرض المباشر ============ -->
 <div class="page" id="display">
   <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-    <h2 style="border:none;padding:0;margin:0">🖥️ عرض مباشر — منتجات المتوفرة داخل المحل</h2>
+    <h2 style="border:none;padding:0;margin:0">🖥️️ عرض مباشر — منتجات المتوفرة داخل المحل</h2>
     <span class="pill pill-info" id="dispClock"></span>
   </div>
   <div class="prod-grid" id="displayGrid"></div>
@@ -175,7 +224,7 @@ tr:hover td{background:#f8fafc}
     <h2>➕ إضافة زبون أقساط جديد</h2>
     <div class="grid g3">
       <div><label>الاسم الكامل</label><input id="ciName" placeholder="اسم الزبون"></div>
-      <div><label>رقم واتساب (للتذكير الشهري)</label><input id="ciPhone" inputmode="tel" placeholder="مثال: 0550123456" dir="ltr"></div>
+      <div><label>رقم واتساب (للتذكير الشهري)</label><input id="ciPhone" inputmode="tel" placeholder="مثال: 07701234567" dir="ltr"></div>
       <div><label>المبلغ الإجمالي</label><input id="ciTotal" type="number" min="0" placeholder="0"></div>
     </div>
     <div class="grid g3">
@@ -215,8 +264,8 @@ tr:hover td{background:#f8fafc}
   <label>عدد الأقساط الشهرية</label>
   <input id="instN" type="number" min="1" value="3">
   <label>رقم واتساب الزبون (للتذكير)</label>
-  <input id="instPhone" inputmode="tel" placeholder="0550123456" dir="ltr">
-  <p style="font-size:14px;color:#6b7280;margin-bottom:10px">القسط الشهري: <b id="instMonthly" style="color:var(--p)">0</b> د.ج — سيُرسَل تذكير واتساب في نفس اليوم من الشهر القادم.</p>
+  <input id="instPhone" inputmode="tel" placeholder="07701234567" dir="ltr">
+  <p style="font-size:14px;color:#6b7280;margin-bottom:10px">القسط الشهري: <b id="instMonthly" style="color:var(--p)">0</b> د.ع — سيُرسَل تذكير واتساب في نفس اليوم من الشهر القادم.</p>
   <div class="grid g2">
     <button class="btn btn-ok" onclick="confirmInstall()">✅ تأكيد</button>
     <button class="btn btn-g" onclick="closeM('instModal')">إلغاء</button>
@@ -250,25 +299,33 @@ let unlocked = false;
 let editingId = null, payCustId = null;
 let appPin = "1234";
 
-const fmt = n => (Number(n)||0).toLocaleString('ar-DZ') + ' د.ج';
+const fmt = n => (Number(n)||0).toLocaleString('ar-IQ') + ' د.ع';
 const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.style.display='block'; setTimeout(()=>t.style.display='none',2200); }
 
-// شاشة التحميل التفاعلية للمزامنة السحابية
-const loader = document.createElement('div');
-loader.innerHTML = `<div style="position:fixed;inset:0;background:rgba(255,255,255,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:bold;flex-direction:column;gap:15px;"><div style="font-size:40px;animation: fade 1s infinite alternate">⏳</div><span id="loadText">جاري جلب البيانات...</span></div>`;
-loader.id = 'serverLoader';
-document.body.appendChild(loader);
+/* ==== شارة المزامنة بالخلفية ==== */
+const syncStatus = document.createElement('div');
+syncStatus.className = 'sync-status';
+document.body.appendChild(syncStatus);
+let syncTimeout;
 
-function showLoader(text="جاري المزامنة...") {
-  document.getElementById('loadText').textContent = text;
-  loader.style.display = 'flex';
+function setSyncState(state) {
+  clearTimeout(syncTimeout);
+  syncStatus.style.display = 'flex';
+  if(state === 'load') {
+    syncStatus.innerHTML = '<span class="spin">⏳</span> جاري المزامنة بالخلفية...';
+  } else if(state === 'ok') {
+    syncStatus.innerHTML = '<span style="color:var(--ok);font-size:16px">✅</span> تمت المزامنة بنجاح';
+    syncTimeout = setTimeout(() => syncStatus.style.display = 'none', 3000);
+  } else {
+    syncStatus.innerHTML = '<span style="color:var(--bad)">❌</span> خطأ في الاتصال بالسيرفر';
+    syncTimeout = setTimeout(() => syncStatus.style.display = 'none', 4500);
+  }
 }
-function hideLoader() { loader.style.display = 'none'; }
 
-// جلب البيانات من Google Sheets
+// جلب البيانات من Google Sheets عند بدء التطبيق
 async function loadData() {
-  showLoader("جاري الاتصال بالسيرفر وجلب البيانات...");
+  setSyncState('load');
   try {
     const res = await fetch(API_URL);
     const data = await res.json();
@@ -276,32 +333,31 @@ async function loadData() {
     sales = data.sales || [];
     customers = data.customers || [];
     if(data.pin) appPin = data.pin;
+    setSyncState('ok');
   } catch(e) {
-    toast('❌ خطأ في الاتصال بقاعدة البيانات');
+    setSyncState('err');
   }
-  hideLoader();
   renderSaleGrid();
   renderCart();
-  checkReminders(); // فحص الأقساط بعد الجلب
+  checkReminders(); 
 }
 
-// حفظ البيانات في Google Sheets
+// حفظ البيانات في السيرفر (بالخلفية دون تجميد الشاشة)
 async function saveAll() {
-  showLoader("جاري الحفظ والمزامنة مع السيرفر...");
+  setSyncState('load');
   try {
     await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ products, sales, customers, pin: appPin })
     });
-    toast('✅ تم الحفظ والمزامنة بنجاح');
+    setSyncState('ok');
   } catch(e) {
-    toast('❌ فشل الحفظ، تأكد من اتصال الإنترنت');
+    setSyncState('err');
   }
-  hideLoader();
 }
 
-window.onload = loadData; // تشغيل المزامنة عند بدء الصفحة
+window.onload = loadData;
 
 /* ================= التنقل ================= */
 document.querySelectorAll('#mainNav button').forEach(b=>{
@@ -311,12 +367,19 @@ document.querySelectorAll('#mainNav button').forEach(b=>{
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     const pg=b.dataset.page;
     document.getElementById(pg).classList.add('active');
+    
     if(pg==='lock' && !unlocked) showLock();
     if(pg==='lock' && unlocked) showAdmin();
     if(pg==='sales') renderSaleGrid();
     if(pg==='display') renderDisplay();
     if(pg==='install') renderInstall();
     if(pg==='cust') renderCustList();
+    if(pg==='reports') {
+      if(!document.getElementById('reportMonth').value) {
+        document.getElementById('reportMonth').value = new Date().toISOString().slice(0,7);
+      }
+      renderReports();
+    }
     window.scrollTo(0,0);
   };
 });
@@ -359,7 +422,6 @@ async function wipeAll(){
 
 /* ================= الإدارة: المنتجات ================= */
 let tmpImg='';
-// رفع الصورة مع الضغط السريع لتناسب Google Sheets
 function loadImg(inp){
   const f=inp.files[0]; if(!f) return;
   const r=new FileReader();
@@ -367,13 +429,13 @@ function loadImg(inp){
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const MAX_WIDTH = 400; // تصغير الحجم
+      const MAX_WIDTH = 400; 
       const scaleSize = MAX_WIDTH / img.width;
       canvas.width = MAX_WIDTH;
       canvas.height = img.height * scaleSize;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      tmpImg = canvas.toDataURL('image/jpeg', 0.6); // ضغط 60%
+      tmpImg = canvas.toDataURL('image/jpeg', 0.6); 
       const p=document.getElementById('npPreview'); 
       p.src=tmpImg; p.style.display='block'; 
     }
@@ -401,16 +463,18 @@ function saveProduct(){
   if(editingId){
     const p=products.find(x=>x.id===editingId);
     p.name=name; p.types=types; if(tmpImg) p.img=tmpImg;
-    editingId=null; toast('✅ تم التعديل محلياً');
+    editingId=null; toast('✏️ تم تعديل المنتج');
   } else {
     products.push({id:Date.now(), name, img:tmpImg||'', types});
-    toast('✅ تم الحفظ محلياً');
+    toast('✅ تم إضافة المنتج للقائمة');
   }
   document.getElementById('npName').value=''; tmpImg='';
   document.getElementById('npPreview').style.display='none';
   document.getElementById('typeRows').innerHTML=''; addTypeRow();
   renderAdminTable(); renderStats();
-  saveAll(); // المزامنة
+  
+  // يتم استدعاء الحفظ السحابي هنا دون عرقلة المستخدم
+  saveAll(); 
 }
 function editProduct(id){
   const p=products.find(x=>x.id===id); if(!p) return;
@@ -521,13 +585,13 @@ function checkout(mode){
   printReceipt({title:'فاتورة بيع نقدي', lines:cart.map(c=>`${c.name} (${c.type}) × ${c.qty} = ${fmt(c.price*c.qty)}`), total});
   cart=[]; renderCart(); renderSaleGrid(); 
   toast('✅ تمت عملية البيع');
-  saveAll(); // المزامنة
+  saveAll(); 
 }
 function calcInst(){
   const total=cart.reduce((s,c)=>s+c.price*c.qty,0);
   const down=+document.getElementById('instDown').value||0;
   const n=+document.getElementById('instN').value||1;
-  document.getElementById('instMonthly').textContent=Math.max(0,Math.ceil((total-down)/n)).toLocaleString('ar-DZ');
+  document.getElementById('instMonthly').textContent=Math.max(0,Math.ceil((total-down)/n)).toLocaleString('ar-IQ');
 }
 ['instDown','instN'].forEach(id=>document.addEventListener('input',e=>{ if(e.target.id===id) calcInst(); }));
 function confirmInstall(){
@@ -547,12 +611,80 @@ function confirmInstall(){
   printReceipt({title:'فاتورة بيع بالتقسيط', cust:c.name, lines:[...cart.map(x=>`${x.name} (${x.type}) × ${x.qty} = ${fmt(x.price*x.qty)}`),'—','دفعة أولى: '+fmt(down),'المتبقي ديناً: '+fmt(debt),`القسط الشهري: ${fmt(Math.ceil(debt/n))} × ${n}`], total});
   cart=[]; renderCart(); renderSaleGrid(); closeM('instModal');
   toast('✅ تم البيع بالتقسيط — سيتم إرسال تذكير واتساب شهرياً');
-  saveAll(); // المزامنة
+  saveAll(); 
 }
 function addMonths(d,m){ const x=new Date(d); x.setMonth(x.getMonth()+m); return x; }
 
+/* ================= التقارير والمبيعات الشهرية ================= */
+function renderReports() {
+  const m = document.getElementById('reportMonth').value; 
+  if(!m) return;
+  
+  const filteredSales = sales.filter(s => s.date.startsWith(m));
+  
+  let count = filteredSales.length;
+  let itemsSold = 0;
+  let totalRevenue = 0;
+  
+  let rows = '<tr><th>التاريخ</th><th>النوع</th><th>التفاصيل (المنتج والكمية)</th><th>المبلغ الإجمالي</th></tr>';
+  
+  filteredSales.forEach(s => {
+    totalRevenue += s.total;
+    let details = s.items.map(i => {
+      itemsSold += i.qty;
+      return `${esc(i.name)} (${esc(i.type)}) - <b style="color:var(--p)">${i.qty} قطع</b> × ${fmt(i.price)}`;
+    }).join('<br>');
+    
+    const dStr = new Date(s.date).toLocaleString('ar-IQ', {dateStyle:'short', timeStyle:'short'});
+    const payType = s.pay === 'تقسيط' ? `تقسيط<br><small>(${esc(s.cust)})</small>` : 'نقدي';
+    
+    rows += `<tr>
+      <td><span dir="ltr">${dStr}</span></td>
+      <td><span class="pill ${s.pay==='نقدي'?'pill-ok':'pill-warn'}">${payType}</span></td>
+      <td style="text-align:right;">${details}</td>
+      <td style="font-weight:bold; color:var(--ok)">${fmt(s.total)}</td>
+    </tr>`;
+  });
+  
+  if(filteredSales.length === 0) {
+     rows += '<tr><td colspan="4" class="empty">لا توجد مبيعات مسجلة في هذا الشهر</td></tr>';
+  }
+  
+  document.getElementById('repTable').innerHTML = rows;
+  document.getElementById('repCount').textContent = count;
+  document.getElementById('repItems').textContent = itemsSold;
+  document.getElementById('repTotal').textContent = fmt(totalRevenue);
+}
+
+function printReport() {
+  const m = document.getElementById('reportMonth').value;
+  if(!m) return toast('❌ الرجاء اختيار الشهر أولاً');
+  
+  const filteredSales = sales.filter(s => s.date.startsWith(m));
+  if(filteredSales.length === 0) return toast('❌ لا توجد مبيعات لطباعتها في هذا الشهر');
+  
+  const totalRev = filteredSales.reduce((sum, s) => sum + s.total, 0);
+  let totalItems = 0;
+  
+  let lines = filteredSales.map(s => {
+     const dStr = new Date(s.date).toLocaleDateString('ar-IQ');
+     const itemsText = s.items.map(i => {
+       totalItems += i.qty;
+       return `${i.name} (${i.qty} ق)`;
+     }).join('، ');
+     return `${dStr} [${s.pay}]: ${itemsText} | ${fmt(s.total)}`;
+  });
+  
+  printReceipt({
+    title: `تقرير مبيعات شهر: ${m}`,
+    lines: lines,
+    total: totalRev,
+    extra: `إجمالي الفواتير: ${filteredSales.length}<br>إجمالي القطع المباعة: ${totalItems}`
+  });
+}
+
 /* ================= العرض المباشر ================= */
-setInterval(()=>{ const el=document.getElementById('dispClock'); if(el) el.textContent='🕐 '+new Date().toLocaleString('ar-DZ'); },1000);
+setInterval(()=>{ const el=document.getElementById('dispClock'); if(el) el.textContent='🕐 '+new Date().toLocaleString('ar-IQ'); },1000);
 function renderDisplay(){
   let h='';
   products.forEach(p=>{
@@ -583,7 +715,7 @@ function addCustomer(){
     schedule:[{id:Date.now()+1, date, amount:monthly, total, paid:0, remindDate:addMonths(new Date(date),1).toISOString().slice(0,10), phone}]});
   ['ciName','ciPhone','ciTotal','ciCount','ciNote'].forEach(id=>document.getElementById(id).value='');
   renderInstall(); toast('✅ تم تسجيل الزبون — تذكير واتساب شهري مفعّل');
-  saveAll(); // المزامنة
+  saveAll(); 
 }
 function renderInstall(){
   let tot=0, paid=0;
@@ -611,7 +743,7 @@ function renderInstall(){
 function sendReminder(cid){
   const c=customers.find(x=>x.id===cid); if(!c) return;
   const rem=c.debt - c.schedule.reduce((s,x)=>s+x.paid,0);
-  const msg=encodeURIComponent(`مرحباً ${c.name}،\nتذكير من محل هاني للملبوسات 🧾\nالمتبقي عليك: ${rem.toLocaleString('ar-DZ')} د.ج\nنرجو تسديد القسط في أقرب وقت.\nشكراً لتعاملكم معنا 🌹`);
+  const msg=encodeURIComponent(`مرحباً ${c.name}،\nتذكير من محل هاني للملبوسات 🧾\nالمتبقي عليك: ${rem.toLocaleString('ar-IQ')} د.ع\nنرجو تسديد القسط في أقرب وقت.\nشكراً لتعاملكم معنا 🌹`);
   window.open(`https://wa.me/${c.phone.replace(/\D/g,'')}?text=${msg}`,'_blank');
   toast('📱 تم فتح واتساب لإرسال التذكير');
 }
@@ -636,13 +768,12 @@ function confirmPay(){
   const paidBefore=c.schedule.reduce((s,x)=>s+x.paid,0);
   let left=amt;
   for(const s of c.schedule){ if(left<=0) break; const due=s.total-s.paid; const pay=Math.min(due,left); s.paid+=pay; left-=pay; }
-  // إرجاع فائض إن دفع أكثر من الدين
   if(left>0) c.schedule[c.schedule.length-1].paid+=left;
   const paidAfter=c.schedule.reduce((s,x)=>s+x.paid,0);
   const debtPaid=paidAfter-paidBefore;
   printReceipt({title:'وصل تسديد قسط', cust:c.name, lines:[`المبلغ المُسدَّد: ${fmt(debtPaid)}`], total:debtPaid, extra:`إجمالي المسدَّد حتى الآن: ${fmt(paidAfter)}<br>المتبقي: ${fmt(Math.max(0,c.debt-paidAfter))}`});
   renderInstall(); closeM('payModal'); toast('✅ تم تسجيل الدفع وطباعة الوصل');
-  saveAll(); // المزامنة
+  saveAll(); 
 }
 
 /* ================= كشف حساب زبون ================= */
@@ -689,7 +820,7 @@ function openCust(id){
 }
 function remindOne(cid,sid){
   const c=customers.find(x=>x.id===cid), s=c.schedule.find(x=>x.id===sid);
-  const msg=encodeURIComponent(`مرحباً ${c.name}،\nتذكير من محل هاني للملبوسات:\nقسطك بتاريخ ${s.date} — المتبقي ${(s.total-s.paid).toLocaleString('ar-DZ')} د.ج\nشكراً 🌹`);
+  const msg=encodeURIComponent(`مرحباً ${c.name}،\nتذكير من محل هاني للملبوسات:\nقسطك بتاريخ ${s.date} — المتبقي ${(s.total-s.paid).toLocaleString('ar-IQ')} د.ع\nشكراً 🌹`);
   window.open(`https://wa.me/${c.phone.replace(/\D/g,'')}?text=${msg}`,'_blank');
 }
 function closeCust(){ renderCustList(); }
@@ -703,7 +834,7 @@ function printCust(id){
 
 /* ================= الطباعة ================= */
 function printReceipt(o){
-  const d=new Date().toLocaleString('ar-DZ');
+  const d=new Date().toLocaleString('ar-IQ');
   document.getElementById('printArea').innerHTML=`
     <div style="max-width:340px;margin:auto;border:2px solid #000;padding:20px;border-radius:8px">
       <div style="text-align:center;border-bottom:2px dashed #000;padding-bottom:10px;margin-bottom:12px">
