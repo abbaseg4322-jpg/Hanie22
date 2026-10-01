@@ -2,37 +2,37 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>كاشير هاني للملبوسات</title>
 <style>
-:root{--p:#1a6bd4;--pd:#0d4a9e;--bg:#f2f5f9;--card:#fff;--ok:#16a34a;--bad:#dc2626;--warn:#d97706;}
+:root{--p:#0f766e;--pd:#134e4a;--bg:#f3f6f5;--card:#fff;--ok:#15803d;--bad:#be123c;--warn:#c2410c;--accent:#d4a24c;--ink:#1c2b2a;--soft:#e6efed}
 *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Tahoma,Arial,sans-serif}
-body{background:var(--bg);color:#1f2937;min-height:100vh}
-header{background:linear-gradient(135deg,var(--p),var(--pd));color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:50}
+body{background:var(--bg);color:var(--ink);min-height:100vh;-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--pd),var(--p));border-bottom:3px solid var(--accent);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:50}
 header h1{font-size:20px}
 nav{display:flex;gap:8px;flex-wrap:wrap}
 nav button{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:8px 16px;border-radius:10px;cursor:pointer;font-size:15px;transition:.2s}
-nav button:hover,nav button.active{background:#fff;color:var(--p);font-weight:700}
-main{max-width:1200px;margin:20px auto;padding:0 15px}
+nav button:hover,nav button.active{background:#fff;color:var(--pd);font-weight:700}
+main{max-width:1400px;margin:20px auto;padding:0 15px calc(20px + env(safe-area-inset-bottom))}
 .page{display:none;animation:fade .3s}
 .page.active{display:block}
 @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
 .card{background:var(--card);border-radius:16px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:18px}
 .card h2{font-size:18px;margin-bottom:14px;color:var(--pd);border-right:4px solid var(--p);padding-right:10px}
 input,select,textarea{width:100%;padding:11px 13px;border:1.5px solid #d1d5db;border-radius:10px;font-size:15px;margin-bottom:10px;transition:.2s;background:#fff}
-input:focus,select:focus{border-color:var(--p);outline:none;box-shadow:0 0 0 3px rgba(26,107,212,.15)}
+input:focus,select:focus{border-color:var(--p);outline:none;box-shadow:0 0 0 3px rgba(15,118,110,.18)}
 label{font-size:14px;font-weight:600;color:#374151;display:block;margin-bottom:4px}
 .btn{padding:11px 20px;border:none;border-radius:10px;font-size:15px;cursor:pointer;font-weight:700;transition:.2s}
 .btn-p{background:var(--p);color:#fff}.btn-p:hover{background:var(--pd)}
-.btn-ok{background:var(--ok);color:#fff}.btn-ok:hover{background:#15803d}
-.btn-bad{background:var(--bad);color:#fff}.btn-bad:hover{background:#b91c1c}
-.btn-warn{background:var(--warn);color:#fff}.btn-warn:hover{background:#b45309}
+.btn-ok{background:var(--ok);color:#fff}.btn-ok:hover{background:#166534}
+.btn-bad{background:var(--bad);color:#fff}.btn-bad:hover{background:#9f1239}
+.btn-warn{background:var(--warn);color:#fff}.btn-warn:hover{background:#9a3412}
 .btn-g{background:#e5e7eb;color:#374151}.btn-g:hover{background:#d1d5db}
 .btn-sm{padding:6px 12px;font-size:13px;border-radius:8px}
 table{width:100%;border-collapse:collapse;font-size:14px}
-th{background:#eef2f7;color:var(--pd);padding:10px;font-weight:700}
+th{background:var(--soft);color:var(--pd);padding:10px;font-weight:700}
 td{padding:10px;border-bottom:1px solid #f0f0f0;text-align:center}
-tr:hover td{background:#f8fafc}
+tr:hover td{background:#f6faf9}
 .grid{display:grid;gap:12px}
 .g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
 @media(max-width:800px){.g2,.g3,.g4{grid-template-columns:1fr 1fr}}
@@ -47,7 +47,7 @@ tr:hover td{background:#f8fafc}
 .prod-card .pqty{font-size:12px;color:#6b7280}
 .stock-out{position:absolute;top:8px;right:8px;background:var(--bad);color:#fff;font-size:11px;padding:3px 10px;border-radius:20px}
 .pill{display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700}
-.pill-ok{background:#dcfce7;color:#15803d}.pill-bad{background:#fee2e2;color:#b91c1c}.pill-warn{background:#fef3c7;color:#b45309}.pill-info{background:#dbeafe;color:#1d4ed8}
+.pill-ok{background:#dcfce7;color:#15803d}.pill-bad{background:#fee2e2;color:#b91c1c}.pill-warn{background:#fef3c7;color:#b45309}.pill-info{background:#ccfbf1;color:#115e59}
 .cart-item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px dashed #e5e7eb}
 .cart-item button{margin-right:6px}
 .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;align-items:center;justify-content:center;padding:15px}
@@ -90,6 +90,47 @@ tr:hover td{background:#f8fafc}
 }
 .spin { animation: spin 1s linear infinite; display: inline-block; }
 @keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* ===== تجاوب: حاسوب / آيباد / هاتف ===== */
+.sale-layout{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start}
+.cart-card{position:sticky;top:90px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.actions .btn{flex:1;min-width:130px}
+details.card summary{padding:4px 0}
+.btn{min-height:44px}.btn-sm{min-height:36px}
+nav button{white-space:nowrap}
+/* آيباد */
+@media(max-width:1024px){
+  header{padding:12px 16px}
+  .sale-layout{grid-template-columns:1fr 300px}
+  .prod-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+  nav button{padding:10px 14px}
+}
+/* هاتف */
+@media(max-width:800px){
+  header{padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top))}
+  header h1{font-size:17px}
+  nav{flex-wrap:nowrap;overflow-x:auto;width:100%;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  nav::-webkit-scrollbar{display:none}
+  nav button{flex:0 0 auto;font-size:14px;padding:9px 13px}
+  main{margin:12px auto;padding-left:10px;padding-right:10px}
+  .card{padding:14px;border-radius:14px}
+  .sale-layout{grid-template-columns:1fr}
+  .cart-card{position:static;order:-1}
+  #cartList{max-height:170px!important}
+  .prod-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .prod-card img{height:120px}
+  input,select,textarea{font-size:16px}
+  .stat{padding:12px}.stat .num{font-size:19px}
+  .type-row{grid-template-columns:1fr 70px 80px 36px}
+  table{font-size:13px}th,td{padding:8px 6px;white-space:nowrap}
+  .modal{align-items:flex-end;padding:0}
+  .modal .mbox{max-width:none;border-radius:20px 20px 0 0;max-height:92vh;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+  .sync-status{bottom:calc(12px + env(safe-area-inset-bottom));left:10px;font-size:12px;padding:6px 12px}
+  .toast{max-width:90vw;text-align:center;font-size:14px}
+  .pin-box input{width:48px;height:54px}
+}
+@media(max-width:420px){ .prod-card .pname{font-size:14px} .prod-card .pprice{font-size:15px} }
 </style>
 </head>
 <body>
@@ -164,9 +205,9 @@ tr:hover td{background:#f8fafc}
   <div class="search-row" style="margin-bottom:14px">
     <input id="saleSearch" placeholder="🔍 ابحث عن منتج..." oninput="renderSaleGrid()">
   </div>
-  <div class="grid" style="grid-template-columns:1fr 340px" id="saleLayout">
+  <div class="sale-layout" id="saleLayout">
     <div class="prod-grid" id="saleGrid"></div>
-    <div class="card" style="position:sticky;top:80px;height:fit-content">
+    <div class="card cart-card">
       <h2>🧾 الفاتورة الحالية</h2>
       <div id="cartList" style="max-height:300px;overflow:auto"></div>
       <div style="display:flex;justify-content:space-between;font-size:18px;font-weight:800;padding:12px 0;border-top:2px solid var(--p)">
@@ -221,7 +262,13 @@ tr:hover td{background:#f8fafc}
     <div class="stat"><div class="num" id="insRem">0</div><div class="lbl">المتبقّي</div></div>
   </div>
   <div class="card">
-    <h2>➕ إضافة زبون أقساط جديد</h2>
+    <h2>👤 اختر الزبون</h2>
+    <select id="insPick" onchange="renderPick()"></select>
+    <div id="insPickBody" style="margin-top:12px"></div>
+  </div>
+  <details class="card">
+    <summary style="cursor:pointer;font-weight:700;color:var(--pd)">➕ تسجيل زبون بدين قديم (بدون عملية بيع)</summary>
+    <div style="height:12px"></div>
     <div class="grid g3">
       <div><label>الاسم الكامل</label><input id="ciName" placeholder="اسم الزبون"></div>
       <div><label>رقم واتساب (للتذكير الشهري)</label><input id="ciPhone" inputmode="tel" placeholder="مثال: 07701234567" dir="ltr"></div>
@@ -233,7 +280,7 @@ tr:hover td{background:#f8fafc}
       <div><label>ملاحظات</label><input id="ciNote" placeholder="اختياري"></div>
     </div>
     <button class="btn btn-ok" onclick="addCustomer()">💾 تسجيل الزبون</button>
-  </div>
+  </details>
   <div class="card">
     <h2>📋 سجل الأقساط</h2>
     <div style="overflow-x:auto"><table id="insTable"></table></div>
@@ -258,7 +305,12 @@ tr:hover td{background:#f8fafc}
 <div class="modal" id="instModal"><div class="mbox">
   <h2 style="color:var(--pd);margin-bottom:12px">📋 بيع بالتقسيط</h2>
   <label>الزبون</label>
-  <select id="instCust"></select>
+  <div class="grid g2" style="margin-bottom:8px">
+    <button type="button" class="btn btn-p" id="cmOld" onclick="setCustMode('old')">👤 زبون مسجّل</button>
+    <button type="button" class="btn btn-g" id="cmNew" onclick="setCustMode('new')">➕ زبون جديد</button>
+  </div>
+  <div id="custOldBox"><select id="instCust"></select></div>
+  <div id="custNewBox" style="display:none"><input id="instNewName" placeholder="اسم الزبون الجديد"></div>
   <label>دفعة أولى (تُخصم من الدين)</label>
   <input id="instDown" type="number" min="0" value="0">
   <label>عدد الأقساط الشهرية</label>
@@ -577,9 +629,11 @@ function checkout(mode){
   const total=cart.reduce((s,c)=>s+c.price*c.qty,0);
   if(mode==='install'){
     const sel=document.getElementById('instCust');
-    sel.innerHTML=customers.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')||'<option value="">— لا يوجد زبائن، سجّله أولاً من صفحة الأقساط —</option>';
-    document.getElementById('instPhone').value=customers[0]?customers[0].phone:'';
-    sel.onchange=()=>{ const c=customers.find(x=>x.id==sel.value); document.getElementById('instPhone').value=c?c.phone:''; calcInst(); };
+    sel.innerHTML=customers.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+    sel.onchange=()=>{ const c=customers.find(x=>x.id==sel.value); document.getElementById('instPhone').value=c?c.phone:''; };
+    document.getElementById('instNewName').value='';
+    document.getElementById('instDown').value=0;
+    setCustMode(customers.length?'old':'new');
     calcInst(); openM('instModal');
     return;
   }
@@ -600,24 +654,50 @@ function calcInst(){
   document.getElementById('instMonthly').textContent=Math.max(0,Math.ceil((total-down)/n)).toLocaleString('ar-IQ');
 }
 ['instDown','instN'].forEach(id=>document.addEventListener('input',e=>{ if(e.target.id===id) calcInst(); }));
+let custMode='old';
+function setCustMode(m){
+  custMode=m;
+  document.getElementById('custOldBox').style.display=m==='old'?'block':'none';
+  document.getElementById('custNewBox').style.display=m==='new'?'block':'none';
+  document.getElementById('cmOld').className='btn '+(m==='old'?'btn-p':'btn-g');
+  document.getElementById('cmNew').className='btn '+(m==='new'?'btn-p':'btn-g');
+  const ph=document.getElementById('instPhone');
+  if(m==='old'){ const c=customers.find(x=>x.id==document.getElementById('instCust').value); ph.value=c?c.phone:''; }
+  else ph.value='';
+  calcInst();
+}
 function confirmInstall(){
-  const cid=+document.getElementById('instCust').value;
-  const c=customers.find(x=>x.id===cid);
-  if(!c) return toast('❌ سجّل الزبون أولاً من صفحة الأقساط');
   const total=cart.reduce((s,x)=>s+x.price*x.qty,0);
   const down=+document.getElementById('instDown').value||0;
-  const n=+document.getElementById('instN').value||1;
-  const phone=document.getElementById('instPhone').value.trim()||c.phone;
+  const n=Math.max(1,+document.getElementById('instN').value||1);
+  const phoneIn=document.getElementById('instPhone').value.trim();
+  if(down<0||down>total) return toast('❌ الدفعة الأولى غير صحيحة');
+  let c, isNew=false;
+  if(custMode==='new'){
+    const name=document.getElementById('instNewName').value.trim();
+    if(!name) return toast('❌ أدخل اسم الزبون');
+    if(!phoneIn) return toast('❌ رقم واتساب مطلوب للتذكير');
+    const digits=phoneIn.replace(/\D/g,'');
+    c=customers.find(x=>String(x.name).trim()===name || (digits && String(x.phone).replace(/\D/g,'')===digits));
+    if(!c){ c={id:Date.now(), name, phone:phoneIn, note:'', debt:0, schedule:[]}; isNew=true; }
+  } else {
+    c=customers.find(x=>x.id==document.getElementById('instCust').value);
+    if(!c) return toast('❌ اختر زبوناً أو اضغط «زبون جديد»');
+  }
+  const phone=phoneIn||c.phone;
   const debt=total-down;
   for(const x of cart){ const p=products.find(y=>y.id===x.pid); p.types[x.ti].qty-=x.qty; }
-  c.debt+=debt;
-  const today=new Date();
-  c.schedule.push({id:Date.now(), date:today.toISOString().slice(0,10), amount:Math.ceil(debt/n), total:debt, paid:0, remindDate:addMonths(today,n>0?1:0).toISOString().slice(0,10), phone});
+  if(isNew) customers.push(c);
+  if(debt>0){
+    c.debt+=debt;
+    const today=new Date();
+    c.schedule.push({id:Date.now(), date:today.toISOString().slice(0,10), amount:Math.ceil(debt/n), total:debt, paid:0, remindDate:addMonths(today,1).toISOString().slice(0,10), phone});
+  }
   sales.push({id:Date.now()+1, date:new Date().toISOString(), items:cart.map(x=>({...x})), total, pay:'تقسيط', cust:c.name, down});
   printReceipt({title:'فاتورة بيع بالتقسيط', cust:c.name, lines:[...cart.map(x=>`${x.name} (${x.type}) × ${x.qty} = ${fmt(x.price*x.qty)}`),'—','دفعة أولى: '+fmt(down),'المتبقي ديناً: '+fmt(debt),`القسط الشهري: ${fmt(Math.ceil(debt/n))} × ${n}`], total});
   cart=[]; renderCart(); renderSaleGrid(); closeM('instModal');
-  toast('✅ تم البيع بالتقسيط — سيتم إرسال تذكير واتساب شهرياً');
-  saveAll(); 
+  toast(isNew?'✅ تم تسجيل الزبون الجديد والبيع بالتقسيط':'✅ تم البيع بالتقسيط على حساب '+c.name);
+  saveAll();
 }
 function addMonths(d,m){ const x=new Date(d); x.setMonth(x.getMonth()+m); return x; }
 
@@ -723,7 +803,29 @@ function addCustomer(){
   renderInstall(); toast('✅ تم تسجيل الزبون — تذكير واتساب شهري مفعّل');
   saveAll(); 
 }
+function fillPick(){
+  const sel=document.getElementById('insPick'), keep=sel.value;
+  sel.innerHTML=customers.map(c=>`<option value="${c.id}">${esc(c.name)} — ${esc(c.phone)}</option>`).join('')||'<option value="">— لا يوجد زبائن بعد —</option>';
+  if(keep && customers.some(c=>c.id==keep)) sel.value=keep;
+  renderPick();
+}
+function renderPick(){
+  const c=customers.find(x=>x.id==document.getElementById('insPick').value);
+  const box=document.getElementById('insPickBody');
+  if(!c){ box.innerHTML='<div class="empty">سجّل زبوناً عبر «بيع بالتقسيط» من صفحة البيع</div>'; return; }
+  const paid=c.schedule.reduce((s,x)=>s+x.paid,0), rem=Math.max(0,c.debt-paid);
+  box.innerHTML=`<div class="grid g3" style="margin-bottom:12px">
+    <div class="stat"><div class="num">${fmt(c.debt)}</div><div class="lbl">إجمالي الدين</div></div>
+    <div class="stat"><div class="num" style="color:var(--ok)">${fmt(paid)}</div><div class="lbl">المسدَّد</div></div>
+    <div class="stat"><div class="num" style="color:var(--bad)">${fmt(rem)}</div><div class="lbl">المتبقّي</div></div></div>
+    <div class="actions">
+    <button class="btn btn-ok" onclick="openPay(${c.id})">💵 تنزيل قسط</button>
+    <button class="btn btn-p" onclick="sendReminder(${c.id})">📱 تذكير واتساب</button>
+    <button class="btn btn-g" onclick="gotoCust(${c.id})">📄 كشف الحساب</button></div>`;
+}
+function gotoCust(id){ document.querySelector('#mainNav [data-page=cust]').click(); openCust(id); }
 function renderInstall(){
+  fillPick();
   let tot=0, paid=0;
   let rows='<tr><th>الزبون</th><th>واتساب</th><th>إجمالي الدين</th><th>المسدَّد</th><th>المتبقّي</th><th>حالة التذكير</th><th>إجراءات</th></tr>';
   customers.forEach(c=>{
