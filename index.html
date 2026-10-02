@@ -141,6 +141,7 @@ nav button{white-space:nowrap}
     <button data-page="reports">📊 التقارير والمبيعات</button>
     <button data-page="display">🖥️ العرض المباشر</button>
     <button data-page="install">📋 الأقساط</button>
+    <button data-page="late">⏰ المتأخرون <span id="lateBadge" class="pill pill-bad" style="display:none;margin-right:4px">0</span></button>
     <button data-page="cust">👥 زبائن الأقساط</button>
     <button data-page="lock">🔐 الإدارة</button>
   </nav>
@@ -266,8 +267,8 @@ nav button{white-space:nowrap}
     <select id="insPick" onchange="renderPick()"></select>
     <div id="insPickBody" style="margin-top:12px"></div>
   </div>
-  <details class="card">
-    <summary style="cursor:pointer;font-weight:700;color:var(--pd)">➕ تسجيل زبون بدين قديم (بدون عملية بيع)</summary>
+  <details class="card" id="addCustBox" open>
+    <summary style="cursor:pointer;font-weight:700;color:var(--pd)">➕ إضافة زبون أقساط جديد</summary>
     <div style="height:12px"></div>
     <div class="grid g3">
       <div><label>الاسم الكامل</label><input id="ciName" placeholder="اسم الزبون"></div>
@@ -276,9 +277,10 @@ nav button{white-space:nowrap}
     </div>
     <div class="grid g3">
       <div><label>عدد الأقساط</label><input id="ciCount" type="number" min="1" placeholder="6"></div>
-      <div><label>تاريخ أول قسط</label><input id="ciDate" type="date"></div>
+      <div><label>موعد أول قسط (تاريخ التسديد)</label><input id="ciDate" type="date"></div>
       <div><label>ملاحظات</label><input id="ciNote" placeholder="اختياري"></div>
     </div>
+    <div class="grid g3"><div><label>دفعة مدفوعة مسبقاً (اختياري)</label><input id="ciDown" type="number" min="0" placeholder="0"></div></div>
     <button class="btn btn-ok" onclick="addCustomer()">💾 تسجيل الزبون</button>
   </details>
   <div class="card">
@@ -287,10 +289,25 @@ nav button{white-space:nowrap}
   </div>
 </div>
 
+<!-- ============ المتأخرون ============ -->
+<div class="page" id="late">
+  <div class="grid g3" style="margin-bottom:18px">
+    <div class="stat"><div class="num" id="lateCnt">0</div><div class="lbl">عدد المتأخرين</div></div>
+    <div class="stat"><div class="num" id="lateSum" style="color:var(--bad)">0</div><div class="lbl">مبلغ المتأخرات</div></div>
+    <div class="stat"><div class="num" id="lateMax">0</div><div class="lbl">أطول تأخير (يوم)</div></div>
+  </div>
+  <div class="card">
+    <h2>⏰ المتأخرون عن موعد التسديد</h2>
+    <p style="font-size:13px;color:#6b7280;margin-bottom:10px">يظهر الزبون هنا تلقائياً عند تجاوز موعد القسط، ويختفي فور تسديد القسط المستحق.</p>
+    <div style="overflow-x:auto"><table id="lateTable"></table></div>
+  </div>
+</div>
+
 <!-- ============ كشف حساب زبون ============ -->
 <div class="page" id="cust">
   <div class="card" id="custListCard">
     <h2>👥 الزبائن المسجّلون</h2>
+    <button class="btn btn-ok" style="margin-bottom:12px" onclick="gotoAdd()">➕ إضافة زبون أقساط</button>
     <div style="overflow-x:auto"><table id="custTable"></table></div>
   </div>
   <div class="card" id="custDetail" style="display:none">
@@ -398,10 +415,12 @@ async function loadData() {
   renderSaleGrid();
   renderCart();
   checkReminders(); 
+  updateLateBadge();
 }
 
 // حفظ البيانات في السيرفر (بالخلفية دون تجميد الشاشة)
 async function saveAll() {
+  updateLateBadge();
   setSyncState('load');
   try {
     await fetch(API_URL, {
@@ -432,6 +451,7 @@ document.querySelectorAll('#mainNav button').forEach(b=>{
     if(pg==='display') renderDisplay();
     if(pg==='install') renderInstall();
     if(pg==='cust') renderCustList();
+    if(pg==='late') renderLate();
     if(pg==='reports') {
       if(!document.getElementById('reportMonth').value) {
         document.getElementById('reportMonth').value = new Date().toISOString().slice(0,7);
@@ -786,22 +806,79 @@ function renderDisplay(){
 }
 
 /* ================= الأقساط ================= */
+function gotoAdd(){
+  document.querySelector('#mainNav [data-page=install]').click();
+  const d=document.getElementById('addCustBox'); d.open=true;
+  setTimeout(()=>{ d.scrollIntoView({behavior:'smooth'}); document.getElementById('ciName').focus(); },100);
+}
 function addCustomer(){
   const name=document.getElementById('ciName').value.trim();
   const phone=document.getElementById('ciPhone').value.trim();
   const total=+document.getElementById('ciTotal').value||0;
-  const count=+document.getElementById('ciCount').value||1;
-  const date=document.getElementById('ciDate').value||new Date().toISOString().slice(0,10);
+  const count=Math.max(1,+document.getElementById('ciCount').value||1);
+  const down=+document.getElementById('ciDown').value||0;
+  const firstDue=document.getElementById('ciDate').value||addM(todayStr(),1);
   const note=document.getElementById('ciNote').value.trim();
   if(!name) return toast('❌ أدخل اسم الزبون');
   if(!phone) return toast('❌ رقم واتساب مطلوب لإرسال التذكير');
   if(total<=0) return toast('❌ أدخل المبلغ الإجمالي');
-  const monthly=Math.ceil(total/count);
-  customers.push({id:Date.now(), name, phone, note, debt:total,
-    schedule:[{id:Date.now()+1, date, amount:monthly, total, paid:0, remindDate:addMonths(new Date(date),1).toISOString().slice(0,10), phone}]});
-  ['ciName','ciPhone','ciTotal','ciCount','ciNote'].forEach(id=>document.getElementById(id).value='');
-  renderInstall(); toast('✅ تم تسجيل الزبون — تذكير واتساب شهري مفعّل');
-  saveAll(); 
+  if(down<0||down>=total) return toast('❌ الدفعة المسبقة غير صحيحة');
+  const debt=total-down;
+  const monthly=Math.ceil(debt/count);
+  customers.push({id:Date.now(), name, phone, note, debt,
+    schedule:[{id:Date.now()+1, date:todayStr(), amount:monthly, total:debt, paid:0, firstDue, remindDate:firstDue, phone}]});
+  ['ciName','ciPhone','ciTotal','ciCount','ciNote','ciDown','ciDate'].forEach(id=>document.getElementById(id).value='');
+  renderInstall(); toast('✅ تم تسجيل الزبون — أول قسط بتاريخ '+firstDue);
+  saveAll();
+}
+/* ===== مواعيد الأقساط والمتأخرون ===== */
+function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayStr(){ return ymd(new Date()); }
+function addM(str,m){ const [y,mo,d]=String(str).slice(0,10).split('-').map(Number); const t=new Date(y,mo-1+m,1); const last=new Date(t.getFullYear(),t.getMonth()+1,0).getDate(); t.setDate(Math.min(d,last)); return ymd(t); }
+function doneCnt(s){ return s.amount>0?Math.floor(s.paid/s.amount):0; }
+function dueAt(s,i){ return s.firstDue?addM(s.firstDue,i):addM(s.date,i+1); }
+function dueOf(s){ return dueAt(s,doneCnt(s)); } // موعد القسط القادم غير المسدَّد
+function lateInfo(s){ // معلومات التأخر لدفعة واحدة
+  if(s.paid>=s.total) return null;
+  const today=todayStr(), k=doneCnt(s), n=s.amount>0?Math.ceil(s.total/s.amount):1;
+  let cnt=0; while(k+cnt<n && dueAt(s,k+cnt)<today) cnt++;
+  if(!cnt) return null;
+  return {due:dueOf(s), cnt, amount:Math.min(s.total,(k+cnt)*s.amount)-s.paid, days:Math.round((new Date(today)-new Date(dueOf(s)))/864e5)};
+}
+function lateList(){
+  const out=[];
+  customers.forEach(c=>{
+    const ls=c.schedule.map(lateInfo).filter(Boolean);
+    if(ls.length) out.push({c, amount:ls.reduce((a,x)=>a+x.amount,0), cnt:ls.reduce((a,x)=>a+x.cnt,0), days:Math.max(...ls.map(x=>x.days)), due:ls.map(x=>x.due).sort()[0]});
+  });
+  return out.sort((a,b)=>b.days-a.days);
+}
+function updateLateBadge(){
+  const n=lateList().length, b=document.getElementById('lateBadge');
+  if(b){ b.textContent=n; b.style.display=n?'inline-block':'none'; }
+}
+function renderLate(){
+  const L=lateList();
+  let rows='<tr><th>الزبون</th><th>واتساب</th><th>موعد التسديد</th><th>أيام التأخير</th><th>أقساط متأخرة</th><th>المبلغ المتأخر</th><th>إجراءات</th></tr>';
+  L.forEach(r=>{
+    rows+=`<tr><td style="font-weight:700">${esc(r.c.name)}</td><td dir="ltr">${esc(r.c.phone)}</td>
+      <td>${r.due}</td><td><span class="pill pill-bad">${r.days} يوم</span></td><td>${r.cnt}</td>
+      <td style="color:var(--bad);font-weight:700">${fmt(r.amount)}</td>
+      <td><button class="btn btn-ok btn-sm" onclick="openPay(${r.c.id},${r.amount})">💵 تسديد</button>
+      <button class="btn btn-p btn-sm" onclick="sendLateReminder(${r.c.id})">📱 تذكير</button>
+      <button class="btn btn-g btn-sm" onclick="gotoCust(${r.c.id})">📄 كشف</button></td></tr>`;
+  });
+  if(!L.length) rows+='<tr><td colspan="7" class="empty">✅ لا يوجد متأخرون عن التسديد</td></tr>';
+  document.getElementById('lateTable').innerHTML=rows;
+  document.getElementById('lateCnt').textContent=L.length;
+  document.getElementById('lateSum').textContent=fmt(L.reduce((a,x)=>a+x.amount,0));
+  document.getElementById('lateMax').textContent=L.length?L[0].days:0;
+  updateLateBadge();
+}
+function sendLateReminder(cid){
+  const r=lateList().find(x=>x.c.id===cid); if(!r) return;
+  const msg=encodeURIComponent(`مرحباً ${r.c.name}،\nتذكير من محل هاني للملبوسات 🧾\nلديك قسط متأخر منذ ${r.due} (${r.days} يوم)\nالمبلغ المتأخر: ${r.amount.toLocaleString('ar-IQ')} د.ع\nنرجو التسديد في أقرب وقت.\nشكراً لتعاملكم معنا 🌹`);
+  window.open(`https://wa.me/${r.c.phone.replace(/\D/g,'')}?text=${msg}`,'_blank');
 }
 function fillPick(){
   const sel=document.getElementById('insPick'), keep=sel.value;
@@ -831,13 +908,13 @@ function renderInstall(){
   customers.forEach(c=>{
     const cPaid=c.schedule.reduce((s,x)=>s+x.paid,0);
     tot+=c.debt; paid+=cPaid;
-    const today=new Date().toISOString().slice(0,10);
-    const due=c.schedule.find(x=>x.paid<x.total && x.remindDate<=today);
+    const today=todayStr();
+    const due=c.schedule.find(x=>x.paid<x.total && dueOf(x)<=today);
     rows+=`<tr><td style="font-weight:700">${esc(c.name)}</td>
       <td dir="ltr">${esc(c.phone)}</td>
       <td>${fmt(c.debt)}</td><td style="color:var(--ok)">${fmt(cPaid)}</td>
       <td style="color:var(--bad);font-weight:700">${fmt(c.debt-cPaid)}</td>
-      <td>${due?`<span class="pill pill-bad">تذكير مستحق اليوم</span>`:'<span class="pill pill-ok">في الموعد</span>'}</td>
+      <td>${c.debt-cPaid<=0?'<span class="pill pill-ok">مسدَّد ✔</span>':due?(c.schedule.some(x=>lateInfo(x))?`<span class="pill pill-bad">متأخر</span>`:`<span class="pill pill-warn">مستحق اليوم</span>`):'<span class="pill pill-ok">في الموعد</span>'}</td>
       <td><button class="btn btn-warn btn-sm" onclick="openPay(${c.id})">💵 تسديد</button>
       <button class="btn btn-p btn-sm" onclick="sendReminder(${c.id})">📱 تذكير</button>
       <button class="btn btn-bad btn-sm" onclick="delCust(${c.id})">🗑️</button></td></tr>`;
@@ -862,11 +939,11 @@ function delCust(id){
     saveAll(); 
   } 
 }
-function openPay(cid){
+function openPay(cid,defAmt){
   payCustId=cid; const c=customers.find(x=>x.id===cid);
   const paid=c.schedule.reduce((s,x)=>s+x.paid,0), rem=c.debt-paid;
   document.getElementById('payInfo').innerHTML=`<p style="margin-bottom:10px">الزبون: <b>${esc(c.name)}</b><br>المتبقي: <b style="color:var(--bad)">${fmt(rem)}</b></p>`;
-  document.getElementById('payAmount').value=rem;
+  document.getElementById('payAmount').value=(defAmt>0?Math.min(defAmt,rem):rem);
   openM('payModal');
 }
 function confirmPay(){
@@ -880,7 +957,7 @@ function confirmPay(){
   const paidAfter=c.schedule.reduce((s,x)=>s+x.paid,0);
   const debtPaid=paidAfter-paidBefore;
   printReceipt({title:'وصل تسديد قسط', cust:c.name, lines:[`المبلغ المُسدَّد: ${fmt(debtPaid)}`], total:debtPaid, extra:`إجمالي المسدَّد حتى الآن: ${fmt(paidAfter)}<br>المتبقي: ${fmt(Math.max(0,c.debt-paidAfter))}`});
-  renderInstall(); closeM('payModal'); toast('✅ تم تسجيل الدفع وطباعة الوصل');
+  renderInstall(); renderLate(); closeM('payModal'); toast('✅ تم تسجيل الدفع وطباعة الوصل');
   saveAll(); 
 }
 
@@ -902,7 +979,7 @@ function renderCustList(){
 function openCust(id){
   const c=customers.find(x=>x.id===id);
   const paid=c.schedule.reduce((s,x)=>s+x.paid,0);
-  const today=new Date().toISOString().slice(0,10);
+  const today=todayStr();
   let h=`<h2 style="margin-top:10px">📄 كشف حساب: ${esc(c.name)}</h2>
     <p style="margin-bottom:14px">📱 <span dir="ltr">${esc(c.phone)}</span> ${c.note?` — ${esc(c.note)}`:''}</p>
     <div class="grid g3" style="margin-bottom:16px">
@@ -914,11 +991,11 @@ function openCust(id){
     <tr><th>#</th><th>تاريخ القسط</th><th>المبلغ</th><th>المسدَّد</th><th>المتبقي</th><th>تذكير واتساب</th><th>الحالة</th></tr>`;
   c.schedule.forEach((s,i)=>{
     const rem=s.total-s.paid;
-    const isDue=rem>0 && s.remindDate<=today;
+    const dd=dueOf(s), isLate=rem>0 && !!lateInfo(s), isDue=rem>0 && dd===today;
     h+=`<tr><td>${i+1}</td><td>${s.date}</td><td>${fmt(s.total)}</td>
       <td style="color:var(--ok)">${fmt(s.paid)}</td><td style="color:var(--bad)">${fmt(rem)}</td>
-      <td>${s.remindDate} 📱<br><button class="btn btn-p btn-sm" style="margin-top:4px" onclick="remindOne(${c.id},${s.id})">إرسال تذكير</button></td>
-      <td>${rem<=0?'<span class="pill pill-ok">مسدَّد ✔</span>':isDue?'<span class="pill pill-bad">مستحق اليوم!</span>':'<span class="pill pill-warn">قادم</span>'}</td></tr>`;
+      <td>${rem>0?dd:'—'} 📱<br><button class="btn btn-p btn-sm" style="margin-top:4px" onclick="remindOne(${c.id},${s.id})">إرسال تذكير</button></td>
+      <td>${rem<=0?'<span class="pill pill-ok">مسدَّد ✔</span>':isLate?'<span class="pill pill-bad">متأخر</span>':isDue?'<span class="pill pill-bad">مستحق اليوم!</span>':'<span class="pill pill-warn">قادم</span>'}</td></tr>`;
   });
   h+=`</table></div>
   <button class="btn btn-p" onclick="printCust(${c.id})">🖨️ طباعة كشف الحساب</button>`;
@@ -967,10 +1044,11 @@ document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{ i
 
 /* التحقق من التذكيرات عند فتح التطبيق */
 function checkReminders(){
-  const today=new Date().toISOString().slice(0,10);
-  const due=[];
-  customers.forEach(c=>c.schedule.forEach(s=>{ if(s.paid<s.total && s.remindDate<=today) due.push({c,s}); }));
-  if(due.length) setTimeout(()=>toast(`🔔 ${due.length} قسط مستحق اليوم — تحقق من صفحة الأقساط`),800);
+  const late=lateList().length;
+  const today=todayStr(); let dueToday=0;
+  customers.forEach(c=>c.schedule.forEach(x=>{ if(x.paid<x.total && dueOf(x)===today) dueToday++; }));
+  if(late) setTimeout(()=>toast(`⏰ ${late} زبون متأخر عن التسديد — راجع صفحة المتأخرون`),800);
+  else if(dueToday) setTimeout(()=>toast(`🔔 ${dueToday} قسط مستحق اليوم`),800);
 }
 </script>
 </body>
